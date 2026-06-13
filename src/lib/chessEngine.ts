@@ -5,29 +5,7 @@
 
 // --- Types ---
 
-export type PieceType = 'K' | 'Q' | 'R' | 'B' | 'N'; // King, Queen, Rook, Bishop, Knight
-export type PieceColor = 'w' | 'b'; // White or Black
-
-export interface Piece {
-  type: PieceType;
-  color: PieceColor;
-}
-
-export type Square = Piece | null;
-
-/**
- * BoardState represents a 3x3 board as a 1D array of 9 elements.
- * Index mapping:
- * 0 1 2
- * 3 4 5
- * 6 7 8
- */
-export type BoardState = Square[];
-
-export interface Coords {
-  row: number;
-  col: number;
-}
+import { PieceType, PieceColor, Piece, Square, BoardState, Coords } from '../types';
 
 // --- Coordinate Conversions ---
 

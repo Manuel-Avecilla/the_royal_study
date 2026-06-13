@@ -1,5 +1,5 @@
 import React from 'react';
-import { BoardState, PieceType, PieceColor } from '../lib/chessEngine';
+import { BoardState, PieceType, PieceColor } from '../types';
 import { RotateCw, FlipHorizontal, FlipVertical } from 'lucide-react';
 
 interface ObjectiveCardProps {
@@ -41,12 +41,12 @@ export default function ObjectiveCard({
 
   return (
     <div className="flex flex-col items-center w-full max-w-[180px] sm:max-w-[200px] md:max-w-[240px] lg:max-w-[280px]">
-      <h3 className="text-[10px] uppercase tracking-widest text-accent-slate/60 mb-2 font-semibold">
+      <h3 className="text-[10px] uppercase tracking-widest text-accent-slate/60 mb-1 md:mb-2 font-semibold">
         Objetivo
       </h3>
       
       {/* 3x3 Small Responsive Board */}
-      <div className="grid grid-cols-3 gap-0.5 bg-parchment-dark/30 p-0.5 rounded-lg w-full aspect-square mb-3">
+      <div className="grid grid-cols-3 gap-0.5 bg-parchment-dark/30 p-0.5 rounded-lg w-full aspect-square mb-1.5 md:mb-3">
         {board.map((square, index) => {
           const row = Math.floor(index / 3);
           const col = index % 3;

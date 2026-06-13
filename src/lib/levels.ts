@@ -1,4 +1,4 @@
-import { BoardState } from './chessEngine';
+import { BoardState } from '../types';
 import rawLevels from './levels.json';
 
 /**

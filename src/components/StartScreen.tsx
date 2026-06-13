@@ -1,6 +1,6 @@
 import React from 'react';
 import { Play, Users, Github, Linkedin, HelpCircle } from 'lucide-react';
-import { GameMode } from '../lib/gameReducer';
+import { GameMode } from '../types';
 
 interface StartScreenProps {
   onSelectMode: (mode: GameMode) => void;

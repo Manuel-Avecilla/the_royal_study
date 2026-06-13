@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, AlertTriangle, RotateCcw, ArrowRight } from 'lucide-react';
-import { GamePhase } from '../lib/gameReducer';
+import { GamePhase } from '../types';
 import { useAudio } from '../hooks/useAudio';
+import { SOUNDS } from '../constants/game';
+import { fadeVariants, modalVariants, modalTransition } from '../lib/animations';
 
 interface GameOverlayProps {
   phase: GamePhase;
@@ -26,8 +28,8 @@ export default function GameOverlay({
   const isVisible = phase === 'WON' || phase === 'LOST';
   const isWon = phase === 'WON';
 
-  const { play: playWin } = useAudio('/assets/win.wav');
-  const { play: playLose } = useAudio('/assets/lose.wav');
+  const { play: playWin } = useAudio(SOUNDS.WIN);
+  const { play: playLose } = useAudio(SOUNDS.LOSE);
 
   useEffect(() => {
     if (phase === 'WON') {
@@ -41,16 +43,18 @@ export default function GameOverlay({
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          variants={fadeVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
           className="fixed inset-0 z-50 flex items-center justify-center bg-royal-dark/60 backdrop-blur-sm p-4"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            variants={modalVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={modalTransition}
             className="bg-white border border-parchment-dark p-6 rounded-2xl w-full max-w-[280px] text-center relative overflow-hidden"
           >
             {/* Top Accent Strip */}
@@ -80,14 +84,14 @@ export default function GameOverlay({
                 <>
                   ¡Completado en <strong className="text-royal font-bold">{movesCount + modifierCost}</strong> movimientos! 
                   <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
-                    ({movesCount} piezas + {modifierCost} carta)
+                    ({movesCount} en tablero + {modifierCost} por carta)
                   </span>
                 </>
               ) : (
                 <>
-                  Has consumido tu límite de <strong className="text-royal font-bold">{prediction}</strong> movimientos. 
+                  Has superado tu límite de <strong className="text-royal font-bold">{prediction + modifierCost}</strong> movimientos totales. 
                   <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
-                    (Las penalizaciones de la carta también cuentan)
+                    ({prediction} permitidos en tablero + {modifierCost} por carta)
                   </span>
                 </>
               )}

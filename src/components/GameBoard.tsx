@@ -1,7 +1,8 @@
 import React from 'react';
-import { BoardState, PieceType, PieceColor } from '../lib/chessEngine';
+import { BoardState, PieceType, PieceColor } from '../types';
 import { getPieceSvgPath } from './ObjectiveCard';
 import { useAudio } from '../hooks/useAudio';
+import { SOUNDS } from '../constants/game';
 
 interface GameBoardProps {
   board: BoardState;
@@ -20,7 +21,7 @@ export default function GameBoard({
   onSelectSquare,
   onMovePiece,
 }: GameBoardProps) {
-  const { play } = useAudio('/assets/chess-piece-move.wav');
+  const { play } = useAudio(SOUNDS.MOVE);
   const isPlaying = phase === 'PLAYING';
 
   const handleSquareClick = (index: number) => {
