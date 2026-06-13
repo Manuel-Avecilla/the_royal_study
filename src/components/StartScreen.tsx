@@ -1,6 +1,8 @@
 import React from 'react';
 import { Play, Users, Github, Linkedin, HelpCircle } from 'lucide-react';
 import { GameMode } from '../types';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
 
 interface StartScreenProps {
   onSelectMode: (mode: GameMode) => void;
@@ -24,7 +26,7 @@ export default function StartScreen({ onSelectMode }: StartScreenProps) {
         </div>
 
         {/* Game Rules / Description Card */}
-        <div className="bg-white border border-parchment-dark p-6 md:p-8 rounded-2xl shadow-sm text-left w-full text-xs md:text-sm lg:text-base text-accent-slate leading-relaxed">
+        <Card className="p-6 md:p-8 text-left w-full text-xs md:text-sm lg:text-base text-accent-slate leading-relaxed">
           <h2 className="font-sans text-sm md:text-base lg:text-lg font-bold text-royal mb-2 md:mb-3 flex items-center gap-1.5 md:gap-2">
             <HelpCircle className="w-4 h-4 md:w-5 md:h-5 text-gold-dark" />
             ¿Cómo jugar?
@@ -38,27 +40,31 @@ export default function StartScreen({ onSelectMode }: StartScreenProps) {
           <p>
             <strong>Fase de Predicción:</strong> Antes de mover, calcula mentalmente y define tu límite de movimientos. Alterar la carta objetivo (rotaciones o espejos) te dará la perspectiva adecuada, pero te <strong>penalizará consumiendo movimientos</strong> de tu límite.
           </p>
-        </div>
+        </Card>
 
         {/* Buttons Grid */}
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 md:gap-6 w-full">
           {/* Solo Mode Button */}
-          <button
+          <Button
             onClick={() => onSelectMode('SOLO')}
-            className="flex items-center justify-center gap-2.5 py-3.5 px-6 md:py-4 md:px-8 w-full sm:w-auto sm:min-w-[220px] bg-royal text-white font-sans font-bold text-sm md:text-base lg:text-lg rounded-full hover:bg-royal-dark transition-all shadow-md hover:shadow-lg active:scale-98"
+            variant="primary"
+            size="lg"
+            className="gap-2.5 w-full sm:w-auto sm:min-w-[220px]"
           >
             <Play className="w-4 h-4 md:w-5 md:h-5 fill-current" />
             <span>Modo Solitario</span>
-          </button>
+          </Button>
 
           {/* Local Multiplayer Mode Button */}
-          <button
+          <Button
             onClick={() => onSelectMode('LOCAL_MULTIPLAYER')}
-            className="flex items-center justify-center gap-2.5 py-3.5 px-6 md:py-4 md:px-8 w-full sm:w-auto sm:min-w-[220px] border border-parchment-dark text-royal bg-white font-sans font-bold text-sm md:text-base lg:text-lg rounded-full hover:bg-parchment-light transition-all shadow-sm hover:shadow active:scale-98"
+            variant="secondary"
+            size="lg"
+            className="gap-2.5 w-full sm:w-auto sm:min-w-[220px]"
           >
             <Users className="w-4 h-4 md:w-5 md:h-5" />
             <span>2 Jugadores (Local)</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -87,3 +93,4 @@ export default function StartScreen({ onSelectMode }: StartScreenProps) {
     </div>
   );
 }
+

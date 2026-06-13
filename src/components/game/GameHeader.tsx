@@ -1,5 +1,7 @@
 import React from 'react';
 import { Home } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 
 interface GameHeaderProps {
   isMultiplayer: boolean;
@@ -22,13 +24,16 @@ export default function GameHeader({
     <div className="w-full max-w-2xl md:max-w-4xl lg:max-w-5xl flex justify-between items-center mb-1.5 md:mb-10 border-b border-parchment-dark/30 pb-1 md:pb-4">
       {/* Solitaire vs Multiplayer Label */}
       <div className="flex items-center gap-2 md:gap-3.5">
-        <button
+        <Button
           onClick={onGoToMenu}
-          className="p-1.5 md:p-2.5 rounded-lg border border-parchment-dark text-royal hover:bg-parchment transition-colors"
+          variant="ghost"
+          size="icon"
+          className="border border-parchment-dark"
           title="Volver al Menú Principal"
+          aria-label="Volver al Menú Principal"
         >
           <Home className="w-4 h-4 md:w-5 md:h-5" />
-        </button>
+        </Button>
         <span className="text-xs md:text-sm lg:text-base font-sans font-bold text-royal uppercase tracking-wider">
           {isMultiplayer ? 'Modo 2 Jugadores' : 'Modo Solitario'}
         </span>
@@ -45,7 +50,7 @@ export default function GameHeader({
             <span className={activePlayer === 2 ? 'text-royal underline decoration-gold decoration-2 underline-offset-4' : 'text-accent-slate/60'}>
               J2: {scores.p2}
             </span>
-            <span className="text-[9px] md:text-[11px] lg:text-xs px-1.5 py-0.5 md:px-2.5 md:py-1 bg-royal text-white rounded">Meta: 6</span>
+            <Badge variant="primary">Meta: 6</Badge>
           </div>
         ) : (
           <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs lg:text-sm font-sans font-semibold text-accent-slate/60 uppercase tracking-wider">
@@ -60,3 +65,4 @@ export default function GameHeader({
     </div>
   );
 }
+

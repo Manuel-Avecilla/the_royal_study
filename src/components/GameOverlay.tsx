@@ -5,6 +5,8 @@ import { GamePhase } from '../types';
 import { useAudio } from '../hooks/useAudio';
 import { SOUNDS } from '../constants/game';
 import { fadeVariants, modalVariants, modalTransition } from '../lib/animations';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
 
 interface GameOverlayProps {
   phase: GamePhase;
@@ -55,69 +57,76 @@ export default function GameOverlay({
             animate="animate"
             exit="exit"
             transition={modalTransition}
-            className="bg-white border border-parchment-dark p-6 rounded-2xl w-full max-w-[280px] text-center relative overflow-hidden"
+            className="w-full max-w-[280px]"
           >
-            {/* Top Accent Strip */}
-            <div className={`absolute top-0 left-0 right-0 h-1.5 ${isWon ? 'bg-gold' : 'bg-accent-rose'}`} />
+            <Card className="p-6 text-center relative overflow-hidden">
+              {/* Top Accent Strip */}
+              <div className={`absolute top-0 left-0 right-0 h-1.5 ${isWon ? 'bg-gold' : 'bg-accent-rose'}`} />
 
-            {/* Header Icon */}
-            <div className="flex justify-center mb-4 mt-2">
+              {/* Header Icon */}
+              <div className="flex justify-center mb-4 mt-2">
+                {isWon ? (
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-gold/10 text-gold border border-gold/20">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-accent-rose/10 text-accent-rose border border-accent-rose/20">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+
+              {/* Title */}
+              <h2 className="font-sans text-base md:text-lg lg:text-xl font-bold text-royal mb-1.5">
+                {isWon ? '¡Victoria Real!' : 'Límite Superado'}
+              </h2>
+              
+              {/* Description */}
+              <p className="font-sans text-[11px] text-accent-slate/85 mb-5 leading-relaxed px-1">
+                {isWon ? (
+                  <>
+                    ¡Completado en <strong className="text-royal font-bold">{movesCount + modifierCost}</strong> movimientos! 
+                    <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
+                      ({movesCount} en tablero + {modifierCost} por carta)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Has superado tu límite de <strong className="text-royal font-bold">{prediction + modifierCost}</strong> movimientos totales. 
+                    <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
+                      ({prediction} permitidos en tablero + {modifierCost} por carta)
+                    </span>
+                  </>
+                )}
+              </p>
+
+              {/* Primary Action Button */}
               {isWon ? (
-                <div className="flex items-center justify-center w-11 h-11 rounded-full bg-gold/10 text-gold border border-gold/20">
-                  <Trophy className="w-5 h-5" />
-                </div>
+                <Button
+                  onClick={onNextLevel}
+                  variant="gold"
+                  size="sm"
+                  className="gap-1.5 w-full py-2 px-4 shadow-sm"
+                >
+                  <span>{isLastLevel ? 'Reiniciar Juego' : 'Siguiente Nivel'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
               ) : (
-                <div className="flex items-center justify-center w-11 h-11 rounded-full bg-accent-rose/10 text-accent-rose border border-accent-rose/20">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
+                <Button
+                  onClick={onRestart}
+                  variant="primary"
+                  size="sm"
+                  className="gap-1.5 w-full py-2 px-4 shadow-sm"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reintentar Estudio</span>
+                </Button>
               )}
-            </div>
-
-            {/* Title */}
-            <h2 className="font-sans text-base md:text-lg lg:text-xl font-bold text-royal mb-1.5">
-              {isWon ? '¡Victoria Real!' : 'Límite Superado'}
-            </h2>
-            
-            {/* Description */}
-            <p className="font-sans text-[11px] text-accent-slate/85 mb-5 leading-relaxed px-1">
-              {isWon ? (
-                <>
-                  ¡Completado en <strong className="text-royal font-bold">{movesCount + modifierCost}</strong> movimientos! 
-                  <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
-                    ({movesCount} en tablero + {modifierCost} por carta)
-                  </span>
-                </>
-              ) : (
-                <>
-                  Has superado tu límite de <strong className="text-royal font-bold">{prediction + modifierCost}</strong> movimientos totales. 
-                  <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
-                    ({prediction} permitidos en tablero + {modifierCost} por carta)
-                  </span>
-                </>
-              )}
-            </p>
-
-            {/* Primary Action Button */}
-            {isWon ? (
-              <button
-                onClick={onNextLevel}
-                className="flex items-center justify-center gap-1.5 py-2 px-4 bg-gold text-white font-sans font-bold text-xs rounded-full hover:bg-gold-dark transition-colors w-full shadow-sm"
-              >
-                <span>{isLastLevel ? 'Reiniciar Juego' : 'Siguiente Nivel'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                onClick={onRestart}
-                className="flex items-center justify-center gap-1.5 py-2 px-4 bg-royal text-white font-sans font-bold text-xs rounded-full hover:bg-royal-dark transition-colors w-full shadow-sm"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reintentar Estudio</span>
-              </button>
-            )}
+            </Card>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
+
