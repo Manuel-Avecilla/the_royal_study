@@ -235,3 +235,67 @@ export function mirrorBoardVertical(board: BoardState): BoardState {
   }
   return newBoard;
 }
+
+/**
+ * Finds the minimum number of moves to transition from startBoard to targetBoard.
+ * If unreachable, returns a sensible default (e.g., 6).
+ */
+export function solvePuzzle(startBoard: BoardState, targetBoard: BoardState): number {
+  function serializeBoard(b: BoardState): string {
+    return b.map(s => s ? s.type : '.').join('');
+  }
+
+  function isMatching(b1: BoardState, b2: BoardState): boolean {
+    return b1.every((square, i) => {
+      const targetSquare = b2[i];
+      if (square === null && targetSquare === null) return true;
+      if (square !== null && targetSquare !== null) {
+        return square.type === targetSquare.type;
+      }
+      return false;
+    });
+  }
+
+  const startKey = serializeBoard(startBoard);
+  const targetKey = serializeBoard(targetBoard);
+
+  if (startKey === targetKey) return 0;
+
+  const queue: { board: BoardState; depth: number }[] = [];
+  const visited = new Set<string>();
+
+  queue.push({ board: startBoard, depth: 0 });
+  visited.add(startKey);
+
+  let iterations = 0;
+  // Limit iterations to prevent any infinite loops (safety ceiling)
+  while (queue.length > 0 && iterations < 10000) {
+    iterations++;
+    const current = queue.shift()!;
+
+    if (isMatching(current.board, targetBoard)) {
+      return current.depth;
+    }
+
+    // Generate neighbors
+    for (let fromIdx = 0; fromIdx < 9; fromIdx++) {
+      const piece = current.board[fromIdx];
+      if (!piece) continue;
+
+      const validDestinations = getValidMoves(fromIdx, current.board);
+      for (const toIdx of validDestinations) {
+        const nextBoard = [...current.board];
+        nextBoard[toIdx] = nextBoard[fromIdx];
+        nextBoard[fromIdx] = null;
+
+        const nextKey = serializeBoard(nextBoard);
+        if (!visited.has(nextKey)) {
+          visited.add(nextKey);
+          queue.push({ board: nextBoard, depth: current.depth + 1 });
+        }
+      }
+    }
+  }
+
+  return 6; // Fallback if unreachable
+}

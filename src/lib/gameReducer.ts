@@ -4,34 +4,37 @@ import {
   mirrorBoardHorizontal, 
   mirrorBoardVertical, 
   getValidMoves,
+  solvePuzzle,
   Square
 } from './chessEngine';
-import { Level, levels } from './levels';
+import { levels, GLOBAL_INITIAL_BOARD } from './levels';
 
 export type GamePhase = 'PREDICTING' | 'PLAYING' | 'WON' | 'LOST';
 
 export interface GameState {
   phase: GamePhase;
   levelIndex: number;
+  levelQueue: number[];            // Pending levels queue (shuffled indices)
+  solvedCount: number;             // Total puzzles solved
   
   // Boards
-  currentBoard: BoardState;
-  originalTargetBoard: BoardState; // Reference to original board from level data
-  targetBoard: BoardState;         // Active board target with transformations applied
+  currentBoard: BoardState;        // Active board layout
+  levelStartBoard: BoardState;     // Snapshot of board at level start for retying
+  originalTargetBoard: BoardState; // Target board configuration before modifiers
+  targetBoard: BoardState;         // Active target board with modifiers applied
   
   // Target card modifiers
-  rotations: number;               // Number of clockwise 90deg rotations (0, 1, 2, or 3)
-  mirrorH: boolean;                // Is mirrored horizontally
-  mirrorV: boolean;                // Is mirrored vertically
+  rotations: number;               // 0, 1, 2, or 3
+  mirrorH: boolean;
+  mirrorV: boolean;
   
-  // Prediction system
-  basePrediction: number;          // Moves predicted for the unmodified level
-  prediction: number;              // Total moves limit = basePrediction + cost of modifiers
+  // Prediction values
+  prediction: number;              // Committed move cost limit selected by the user
   
   // Game execution state
-  movesCount: number;              // Moves made so far in PLAYING phase
-  selectedSquare: number | null;   // Selected piece index for click-to-move
-  validMoves: number[];            // Valid target indices for the selected piece
+  movesCount: number;              // Physical moves made during PLAYING
+  selectedSquare: number | null;   // Active selected square index
+  validMoves: number[];            // Valid target squares highlighted
   
   // History stack for Undo
   history: BoardState[];
@@ -51,8 +54,19 @@ export type GameAction =
   | { type: 'NEXT_LEVEL' };
 
 /**
- * Compares two BoardStates by checking if the piece types match on all squares.
- * We ignore color differences for win conditions since all active pieces are allies.
+ * Fisher-Yates Shuffle algorithm to randomize level orders.
+ */
+export function shuffle(array: number[]): number[] {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+/**
+ * Compares two BoardStates by piece types.
  */
 export function isBoardMatching(b1: BoardState, b2: BoardState): boolean {
   return b1.every((square, i) => {
@@ -66,7 +80,7 @@ export function isBoardMatching(b1: BoardState, b2: BoardState): boolean {
 }
 
 /**
- * Helper to apply rotations and mirrors deterministically from the base board configuration.
+ * Applies active rotations and mirrors deterministically from original board.
  */
 export function applyTransformations(
   board: BoardState,
@@ -75,55 +89,50 @@ export function applyTransformations(
   mirrorV: boolean
 ): BoardState {
   let temp = [...board];
-  
-  // 1. Apply active rotations
   for (let i = 0; i < rotations; i++) {
     temp = rotateBoard90(temp);
   }
-  
-  // 2. Apply horizontal flip
   if (mirrorH) {
     temp = mirrorBoardHorizontal(temp);
   }
-  
-  // 3. Apply vertical flip
   if (mirrorV) {
     temp = mirrorBoardVertical(temp);
   }
-  
   return temp;
 }
 
 /**
- * Calculates the total prediction value based on base prediction and active modifiers.
- * Each rotation adds +1. Horizontal mirror adds +1. Vertical mirror adds +1.
+ * Calculates modifier cost.
+ * Rotations add 1 each. Horizontal mirror adds 1. Vertical mirror adds 1.
  */
-export function calculateTotalPrediction(
-  base: number,
-  rotations: number,
-  mirrorH: boolean,
-  mirrorV: boolean
-): number {
-  const modifierCost = rotations + (mirrorH ? 1 : 0) + (mirrorV ? 1 : 0);
-  return base + modifierCost;
+export function getModifierCost(rotations: number, mirrorH: boolean, mirrorV: boolean): number {
+  return rotations + (mirrorH ? 1 : 0) + (mirrorV ? 1 : 0);
 }
 
 /**
- * Generates the default initial state for a given level index.
+ * Initializes the game state. Shuffles level queue and sets currentBoard to GLOBAL_INITIAL_BOARD.
  */
 export function getInitialState(levelIndex: number): GameState {
-  const level = levels[levelIndex] || levels[0];
+  const allIndices = Array.from({ length: levels.length }, (_, i) => i);
+  const queue = shuffle(allIndices);
+  
+  const currentLvlIndex = queue[0];
+  const remainingQueue = queue.slice(1);
+  const targetLayout = levels[currentLvlIndex];
+
   return {
     phase: 'PREDICTING',
-    levelIndex,
-    currentBoard: [...level.initialBoard],
-    originalTargetBoard: [...level.targetBoard],
-    targetBoard: [...level.targetBoard],
+    levelIndex: currentLvlIndex,
+    levelQueue: remainingQueue,
+    solvedCount: 0,
+    currentBoard: [...GLOBAL_INITIAL_BOARD],
+    levelStartBoard: [...GLOBAL_INITIAL_BOARD],
+    originalTargetBoard: [...targetLayout],
+    targetBoard: [...targetLayout],
     rotations: 0,
     mirrorH: false,
     mirrorV: false,
-    basePrediction: level.minMoves,
-    prediction: level.minMoves,
+    prediction: 1,
     movesCount: 0,
     selectedSquare: null,
     validMoves: [],
@@ -146,11 +155,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         state.mirrorH,
         state.mirrorV
       );
+      
+      const newModifierCost = getModifierCost(nextRotations, state.mirrorH, state.mirrorV);
+      // Prediction cannot be lower than modifierCost + 1
+      const nextPrediction = Math.max(state.prediction, newModifierCost + 1);
+
       return {
         ...state,
         rotations: nextRotations,
         targetBoard: transformedBoard,
-        prediction: calculateTotalPrediction(state.basePrediction, nextRotations, state.mirrorH, state.mirrorV),
+        prediction: nextPrediction,
       };
     }
 
@@ -163,11 +177,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         nextMirrorH,
         state.mirrorV
       );
+
+      const newModifierCost = getModifierCost(state.rotations, nextMirrorH, state.mirrorV);
+      const nextPrediction = Math.max(state.prediction, newModifierCost + 1);
+
       return {
         ...state,
         mirrorH: nextMirrorH,
         targetBoard: transformedBoard,
-        prediction: calculateTotalPrediction(state.basePrediction, state.rotations, nextMirrorH, state.mirrorV),
+        prediction: nextPrediction,
       };
     }
 
@@ -180,21 +198,26 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         state.mirrorH,
         nextMirrorV
       );
+
+      const newModifierCost = getModifierCost(state.rotations, state.mirrorH, nextMirrorV);
+      const nextPrediction = Math.max(state.prediction, newModifierCost + 1);
+
       return {
         ...state,
         mirrorV: nextMirrorV,
         targetBoard: transformedBoard,
-        prediction: calculateTotalPrediction(state.basePrediction, state.rotations, state.mirrorH, nextMirrorV),
+        prediction: nextPrediction,
       };
     }
 
     case 'SET_BASE_PREDICTION': {
       if (state.phase !== 'PREDICTING') return state;
-      const nextBase = Math.max(1, action.count);
+      const modifierCost = getModifierCost(state.rotations, state.mirrorH, state.mirrorV);
+      // Force minimum limit: prediction >= modifierCost + 1
+      const nextPrediction = Math.max(modifierCost + 1, action.count);
       return {
         ...state,
-        basePrediction: nextBase,
-        prediction: calculateTotalPrediction(nextBase, state.rotations, state.mirrorH, state.mirrorV),
+        prediction: nextPrediction,
       };
     }
 
@@ -203,34 +226,25 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         phase: 'PLAYING',
+        levelStartBoard: [...state.currentBoard], // Lock starting state
         movesCount: 0,
         selectedSquare: null,
         validMoves: [],
-        history: [[...state.currentBoard]], // Store initial board in history
+        history: [[...state.currentBoard]], // Initialize history stack
       };
     }
 
     case 'SELECT_PIECE': {
       if (state.phase !== 'PLAYING') return state;
-      
       const { index } = action;
-      // If clicking same selected piece, deselect it
+
       if (index === state.selectedSquare || index === null) {
-        return {
-          ...state,
-          selectedSquare: null,
-          validMoves: [],
-        };
+        return { ...state, selectedSquare: null, validMoves: [] };
       }
 
-      // Check if clicked cell contains a piece (we only move player pieces)
       const piece = state.currentBoard[index];
       if (!piece) {
-        return {
-          ...state,
-          selectedSquare: null,
-          validMoves: [],
-        };
+        return { ...state, selectedSquare: null, validMoves: [] };
       }
 
       return {
@@ -249,24 +263,30 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
       }
 
-      // 1. Create next board configuration
       const nextBoard = [...currentBoard];
       nextBoard[toIndex] = nextBoard[selectedSquare];
       nextBoard[selectedSquare] = null;
 
-      // 2. Increment moves count
       const nextMovesCount = movesCount + 1;
-
-      // 3. Save snapshot to history stack
       const nextHistory = [...history, [...nextBoard]];
 
-      // 4. Verify win or loss conditions
+      // Math penalty: cost = physical moves + modifications
+      const modifierCost = getModifierCost(state.rotations, state.mirrorH, state.mirrorV);
+      const totalCost = nextMovesCount + modifierCost;
+
       const matchesTarget = isBoardMatching(nextBoard, state.targetBoard);
       let nextPhase: GamePhase = 'PLAYING';
+      let nextSolvedCount = state.solvedCount;
 
       if (matchesTarget) {
-        nextPhase = 'WON';
-      } else if (nextMovesCount >= prediction) {
+        // Must be within prediction limit to win
+        if (totalCost <= prediction) {
+          nextPhase = 'WON';
+          nextSolvedCount = state.solvedCount + 1;
+        } else {
+          nextPhase = 'LOST';
+        }
+      } else if (totalCost >= prediction) {
         nextPhase = 'LOST';
       }
 
@@ -278,16 +298,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         validMoves: [],
         history: nextHistory,
         phase: nextPhase,
+        solvedCount: nextSolvedCount,
       };
     }
 
     case 'UNDO_MOVE': {
       if (state.phase !== 'PLAYING' || state.history.length <= 1) return state;
 
-      // The last element in history is the current board, so we need to pop it
       const nextHistory = [...state.history];
-      nextHistory.pop(); // Remove current board
-      const previousBoard = nextHistory[nextHistory.length - 1]; // Get previous board state
+      nextHistory.pop(); 
+      const previousBoard = nextHistory[nextHistory.length - 1];
 
       return {
         ...state,
@@ -300,17 +320,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESTART_LEVEL': {
-      const level = levels[state.levelIndex] || levels[0];
+      // Revert board configuration to the start of this level
+      const resetBoard = [...state.levelStartBoard];
+      
       return {
         ...state,
         phase: 'PREDICTING',
-        currentBoard: [...level.initialBoard],
-        targetBoard: applyTransformations(
-          state.originalTargetBoard,
-          state.rotations,
-          state.mirrorH,
-          state.mirrorV
-        ),
+        currentBoard: resetBoard,
+        targetBoard: [...state.originalTargetBoard],
+        rotations: 0,
+        mirrorH: false,
+        mirrorV: false,
+        prediction: 1,
         movesCount: 0,
         selectedSquare: null,
         validMoves: [],
@@ -319,8 +340,37 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'NEXT_LEVEL': {
-      const nextLevelIndex = (state.levelIndex + 1) % levels.length;
-      return getInitialState(nextLevelIndex);
+      // Transition to next randomized level target
+      let nextQueue = [...state.levelQueue];
+      
+      // If queue is empty, reshuffle all levels
+      if (nextQueue.length === 0) {
+        const allIndices = Array.from({ length: levels.length }, (_, i) => i);
+        nextQueue = shuffle(allIndices);
+      }
+
+      const nextLevelIndex = nextQueue[0];
+      const remainingQueue = nextQueue.slice(1);
+      const nextTargetLayout = levels[nextLevelIndex];
+
+      return {
+        ...state,
+        phase: 'PREDICTING',
+        levelIndex: nextLevelIndex,
+        levelQueue: remainingQueue,
+        // Board layout carries over dynamically, levelStartBoard matches current state
+        levelStartBoard: [...state.currentBoard],
+        originalTargetBoard: [...nextTargetLayout],
+        targetBoard: [...nextTargetLayout],
+        rotations: 0,
+        mirrorH: false,
+        mirrorV: false,
+        prediction: 1,
+        movesCount: 0,
+        selectedSquare: null,
+        validMoves: [],
+        history: [],
+      };
     }
 
     default:

@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useReducer } from 'react';
+import React, { useReducer, useState, useEffect } from 'react';
 import { gameReducer, getInitialState } from '../lib/gameReducer';
-import { levels } from '../lib/levels';
 import GameBoard from '../components/GameBoard';
 import ObjectiveCard from '../components/ObjectiveCard';
 import PredictionPanel from '../components/PredictionPanel';
@@ -11,7 +10,16 @@ import { Undo, RotateCcw } from 'lucide-react';
 
 export default function GamePage() {
   const [state, dispatch] = useReducer(gameReducer, 0, getInitialState);
-  const currentLevel = levels[state.levelIndex];
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <div className="min-h-screen bg-parchment-light" />;
+  }
+
 
   const handleSetBasePrediction = (count: number) => {
     dispatch({ type: 'SET_BASE_PREDICTION', count });
@@ -38,15 +46,11 @@ export default function GamePage() {
   };
 
   const handleNextLevel = () => {
-    if (state.levelIndex === levels.length - 1) {
-      dispatch({ type: 'LOAD_LEVEL', levelIndex: 0 }); // Loop back
-    } else {
-      dispatch({ type: 'NEXT_LEVEL' });
-    }
+    dispatch({ type: 'NEXT_LEVEL' });
   };
 
-  const isLastLevel = state.levelIndex === levels.length - 1;
   const isPredicting = state.phase === 'PREDICTING';
+  const modifierCost = state.rotations + (state.mirrorH ? 1 : 0) + (state.mirrorV ? 1 : 0);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-12 bg-parchment-light">
@@ -57,13 +61,9 @@ export default function GamePage() {
           The Royal Study
         </h1>
         <div className="flex items-center justify-center gap-2 mt-1.5 text-[10px] font-sans font-semibold text-accent-slate/60 uppercase tracking-wider">
-          <span>Estudio {state.levelIndex + 1} de {levels.length}</span>
+          <span>Puzzle #{state.solvedCount + 1}</span>
           <span>•</span>
-          <span className="text-gold-dark">{currentLevel.name}</span>
-          <span>•</span>
-          <span className="text-[9px] px-1.5 py-0.5 border border-parchment-dark/50 rounded bg-parchment-dark/20 text-royal">
-            {currentLevel.difficulty}
-          </span>
+          <span className="text-gold-dark">Resueltos: {state.solvedCount}</span>
         </div>
       </header>
 
@@ -85,7 +85,6 @@ export default function GamePage() {
 
           {isPredicting ? (
             <PredictionPanel
-              basePrediction={state.basePrediction}
               prediction={state.prediction}
               rotations={state.rotations}
               mirrorH={state.mirrorH}
@@ -96,11 +95,14 @@ export default function GamePage() {
           ) : (
             /* Execution Status Controls */
             <div className="flex flex-col items-center w-full text-center mt-2.5">
-              <div className="text-[9px] uppercase font-bold text-accent-slate/50 tracking-wider mb-0.5">
-                Movimientos
+              <div className="text-[10px] uppercase font-bold text-accent-slate/50 tracking-wider mb-1">
+                Progreso
               </div>
-              <div className="text-3xl font-extrabold text-royal mb-4 leading-none">
-                {state.movesCount} <span className="text-xs font-sans font-medium text-accent-slate/40">/ {state.prediction}</span>
+              <div className="text-lg font-extrabold text-royal leading-none mb-1.5">
+                Consumidos: <span className="text-gold-dark">{state.movesCount + modifierCost}</span> de {state.prediction}
+              </div>
+              <div className="text-[10px] text-accent-slate/60 font-medium mb-4">
+                {state.movesCount} en tablero • {modifierCost} por modificar carta
               </div>
               
               <div className="flex gap-1.5 w-full">
@@ -151,8 +153,9 @@ export default function GamePage() {
       <GameOverlay
         phase={state.phase}
         movesCount={state.movesCount}
+        modifierCost={modifierCost}
         prediction={state.prediction}
-        isLastLevel={isLastLevel}
+        isLastLevel={false}
         onRestart={handleRestart}
         onNextLevel={handleNextLevel}
       />

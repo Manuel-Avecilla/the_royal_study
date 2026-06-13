@@ -5,6 +5,7 @@ import { Trophy, AlertTriangle, RotateCcw, ArrowRight } from 'lucide-react';
 interface GameOverlayProps {
   phase: 'WON' | 'LOST' | 'PLAYING' | 'PREDICTING';
   movesCount: number;
+  modifierCost: number;
   prediction: number;
   isLastLevel: boolean;
   onRestart: () => void;
@@ -14,6 +15,7 @@ interface GameOverlayProps {
 export default function GameOverlay({
   phase,
   movesCount,
+  modifierCost,
   prediction,
   isLastLevel,
   onRestart,
@@ -55,7 +57,7 @@ export default function GameOverlay({
             </div>
 
             {/* Title */}
-            <h2 className="text-base font-bold text-royal mb-1.5">
+            <h2 className="font-serif text-base font-bold text-royal mb-1.5">
               {isWon ? '¡Victoria Real!' : 'Límite Superado'}
             </h2>
             
@@ -63,11 +65,17 @@ export default function GameOverlay({
             <p className="font-sans text-[11px] text-accent-slate/85 mb-5 leading-relaxed px-1">
               {isWon ? (
                 <>
-                  Resuelto en <strong className="text-royal font-bold">{movesCount}</strong> movimientos. Cumpliste tu predicción de <strong>{prediction}</strong>.
+                  ¡Completado en <strong className="text-royal font-bold">{movesCount + modifierCost}</strong> movimientos! 
+                  <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
+                    ({movesCount} piezas + {modifierCost} carta)
+                  </span>
                 </>
               ) : (
                 <>
-                  Agotaste los <strong>{prediction}</strong> movimientos de tu predicción sin lograr el objetivo.
+                  Has consumido tu límite de <strong className="text-royal font-bold">{prediction}</strong> movimientos. 
+                  <span className="block text-[10px] text-accent-slate/60 mt-1 font-medium">
+                    (Las penalizaciones de la carta también cuentan)
+                  </span>
                 </>
               )}
             </p>

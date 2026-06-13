@@ -1,14 +1,5 @@
-import { BoardState, Square } from './chessEngine';
+import { BoardState } from './chessEngine';
 import rawLevels from './levels.json';
-
-export interface Level {
-  id: number;
-  name: string;
-  difficulty: 'Fácil' | 'Medio' | 'Difícil';
-  initialBoard: BoardState;
-  targetBoard: BoardState;
-  minMoves: number;
-}
 
 /**
  * Parses a row-separated chess board string into a BoardState.
@@ -29,11 +20,10 @@ export function parseBoard(str: string, color: 'w' | 'b'): BoardState {
   });
 }
 
-export const levels: Level[] = rawLevels.map((lvl) => ({
-  id: lvl.id,
-  name: lvl.name,
-  difficulty: lvl.difficulty as 'Fácil' | 'Medio' | 'Difícil',
-  initialBoard: parseBoard(lvl.initialBoard, 'w'),
-  targetBoard: parseBoard(lvl.targetBoard, 'w'),
-  minMoves: lvl.minMoves,
-}));
+/**
+ * Default global starting board layout (valid under Bishop parity and Knight center restrictions).
+ * Pieces: R(0), N(2), K(4), B(6), Q(7).
+ */
+export const GLOBAL_INITIAL_BOARD: BoardState = parseBoard("R . N / . K . / B Q .", "w");
+
+export const levels: BoardState[] = rawLevels.map((boardString) => parseBoard(boardString, 'w'));

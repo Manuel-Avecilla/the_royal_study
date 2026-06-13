@@ -1,82 +1,12 @@
 [
-  {
-    "id": 1,
-    "name": "El Retorno del Rey",
-    "difficulty": "Fácil",
-    "initialBoard": "R N . / B K Q / . . .",
-    "targetBoard": "R N . / B . Q / . K .",
-    "minMoves": 1
-  },
-  {
-    "id": 2,
-    "name": "El Salto del Caballero",
-    "difficulty": "Fácil",
-    "initialBoard": "R . B / . K . / . Q N",
-    "targetBoard": "R N B / . K . / . Q .",
-    "minMoves": 1
-  },
-  {
-    "id": 3,
-    "name": "La Maniobra de la Reina",
-    "difficulty": "Fácil",
-    "initialBoard": "K Q R / B N . / . . .",
-    "targetBoard": "K . R / B N Q / . . .",
-    "minMoves": 1
-  },
-  {
-    "id": 4,
-    "name": "El Paso del Alfil",
-    "difficulty": "Fácil",
-    "initialBoard": "K Q R / . N B / . . .",
-    "targetBoard": "K Q R / . N . / B . .",
-    "minMoves": 1
-  },
-  {
-    "id": 5,
-    "name": "La Apertura de la Torre",
-    "difficulty": "Fácil",
-    "initialBoard": "R K Q / . N . / . B .",
-    "targetBoard": ". K Q / R N . / . B .",
-    "minMoves": 1
-  },
-  {
-    "id": 6,
-    "name": "Cruce de Caminos",
-    "difficulty": "Medio",
-    "initialBoard": "K . R / B N Q / . . .",
-    "targetBoard": "K R . / B N . / . Q .",
-    "minMoves": 2
-  },
-  {
-    "id": 7,
-    "name": "Simetría de la Corte",
-    "difficulty": "Medio",
-    "initialBoard": ". K Q / R N . / . B .",
-    "targetBoard": ". K . / R N Q / . B .",
-    "minMoves": 2
-  },
-  {
-    "id": 8,
-    "name": "El Círculo Real",
-    "difficulty": "Medio",
-    "initialBoard": "K Q . / B N R / . . .",
-    "targetBoard": ". Q . / B N R / K . .",
-    "minMoves": 3
-  },
-  {
-    "id": 9,
-    "name": "El Enigma del Templo",
-    "difficulty": "Difícil",
-    "initialBoard": "K R . / Q N . / B . .",
-    "targetBoard": ". R K / . N Q / . B .",
-    "minMoves": 4
-  },
-  {
-    "id": 10,
-    "name": "Estudio Real Completo",
-    "difficulty": "Difícil",
-    "initialBoard": "K R B / Q N . / . . .",
-    "targetBoard": ". R B / Q N K / . . .",
-    "minMoves": 5
-  }
+  ". K . / R . Q / B . N",
+  "R . N / . K . / B . Q",
+  "K . R / . Q . / B N .",
+  "B . K / Q . R / . N .",
+  ". N B / K . Q / R . .",
+  "R N . / . . K / B . Q",
+  "K . Q / R . N / B . .",
+  "B K R / . Q . / . N .",
+  "B R N / . . . / K Q .",
+  "N . Q / . . K / B R ."
 ]

@@ -2,7 +2,6 @@ import React from 'react';
 import { Play, Plus, Minus } from 'lucide-react';
 
 interface PredictionPanelProps {
-  basePrediction: number;
   prediction: number;
   rotations: number;
   mirrorH: boolean;
@@ -12,7 +11,6 @@ interface PredictionPanelProps {
 }
 
 export default function PredictionPanel({
-  basePrediction,
   prediction,
   rotations,
   mirrorH,
@@ -21,11 +19,12 @@ export default function PredictionPanel({
   onStartPlaying,
 }: PredictionPanelProps) {
   const modifierCost = rotations + (mirrorH ? 1 : 0) + (mirrorV ? 1 : 0);
+  const minAllowed = modifierCost + 1;
 
   return (
     <div className="flex flex-col items-center w-full max-w-[220px] text-center mt-1">
       {/* Title & Info */}
-      <h3 className="text-xs font-semibold text-royal mb-0.5">
+      <h3 className="font-serif text-xs font-semibold text-royal mb-0.5">
         Predicción
       </h3>
       <p className="font-sans text-[10px] text-accent-slate/60 mb-3 leading-relaxed">
@@ -35,22 +34,24 @@ export default function PredictionPanel({
       {/* Adjuster */}
       <div className="flex items-center gap-3.5 mb-3.5">
         <button
-          onClick={() => onSetBasePrediction(basePrediction - 1)}
-          disabled={basePrediction <= 1}
+          onClick={() => onSetBasePrediction(prediction - 1)}
+          disabled={prediction <= minAllowed}
           className="flex items-center justify-center w-7 h-7 rounded-full border border-parchment-dark text-royal bg-transparent hover:bg-parchment disabled:opacity-30 transition-colors"
+          title="Reducir predicción"
         >
           <Minus className="w-3 h-3" />
         </button>
 
         <div className="flex flex-col items-center min-w-[30px]">
-          <span className="text-2xl font-bold text-royal leading-none">
-            {basePrediction}
+          <span className="font-serif text-2xl font-extrabold text-royal leading-none">
+            {prediction}
           </span>
         </div>
 
         <button
-          onClick={() => onSetBasePrediction(basePrediction + 1)}
+          onClick={() => onSetBasePrediction(prediction + 1)}
           className="flex items-center justify-center w-7 h-7 rounded-full border border-parchment-dark text-royal bg-transparent hover:bg-parchment transition-colors"
+          title="Aumentar predicción"
         >
           <Plus className="w-3 h-3" />
         </button>
@@ -58,8 +59,9 @@ export default function PredictionPanel({
 
       {/* Cost Info */}
       {modifierCost > 0 && (
-        <div className="text-[9px] text-accent-slate/70 mb-3.5 font-medium leading-none">
-          Base: {basePrediction} + Modificadores: {modifierCost} = <strong className="text-royal font-bold">{prediction} total</strong>
+        <div className="text-[9px] text-accent-slate/70 mb-3.5 font-medium leading-relaxed">
+          Penalización: {modifierCost} movs. <br />
+          Límite mínimo: {minAllowed}
         </div>
       )}
 
