@@ -5,6 +5,7 @@ import "./globals.css";
 const fontSans = Manrope({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

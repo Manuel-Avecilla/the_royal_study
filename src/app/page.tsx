@@ -53,11 +53,7 @@ export default function GamePage() {
     return () => clearInterval(interval);
   }, [state.phase]);
 
-  if (!isMounted) {
-    return <div className="min-h-screen bg-parchment-light" />;
-  }
-
-  // Render Start screen if in menu mode
+  // Render Start screen if in menu mode (this runs immediately on server/hydration)
   if (state.gameMode === 'MENU') {
     return (
       <StartScreen 
@@ -122,23 +118,27 @@ export default function GamePage() {
         </div>
 
         {/* Solo Level indicator or Scoreboard */}
-        {isMultiplayer ? (
-          <div className="flex items-center gap-3 md:gap-5 text-xs md:text-sm lg:text-base font-sans font-bold">
-            <span className={state.activePlayer === 1 ? 'text-royal underline decoration-gold decoration-2 underline-offset-4' : 'text-accent-slate/60'}>
-              J1: {state.scores.p1}
-            </span>
-            <span className="text-accent-slate/40">•</span>
-            <span className={state.activePlayer === 2 ? 'text-royal underline decoration-gold decoration-2 underline-offset-4' : 'text-accent-slate/60'}>
-              J2: {state.scores.p2}
-            </span>
-            <span className="text-[9px] md:text-[11px] lg:text-xs px-1.5 py-0.5 md:px-2.5 md:py-1 bg-royal text-white rounded">Meta: 6</span>
-          </div>
+        {isMounted ? (
+          isMultiplayer ? (
+            <div className="flex items-center gap-3 md:gap-5 text-xs md:text-sm lg:text-base font-sans font-bold">
+              <span className={state.activePlayer === 1 ? 'text-royal underline decoration-gold decoration-2 underline-offset-4' : 'text-accent-slate/60'}>
+                J1: {state.scores.p1}
+              </span>
+              <span className="text-accent-slate/40">•</span>
+              <span className={state.activePlayer === 2 ? 'text-royal underline decoration-gold decoration-2 underline-offset-4' : 'text-accent-slate/60'}>
+                J2: {state.scores.p2}
+              </span>
+              <span className="text-[9px] md:text-[11px] lg:text-xs px-1.5 py-0.5 md:px-2.5 md:py-1 bg-royal text-white rounded">Meta: 6</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs lg:text-sm font-sans font-semibold text-accent-slate/60 uppercase tracking-wider">
+              <span>Puzzle #{state.solvedCount + 1}</span>
+              <span>•</span>
+              <span className="text-gold-dark">Resueltos: {state.solvedCount}</span>
+            </div>
+          )
         ) : (
-          <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs lg:text-sm font-sans font-semibold text-accent-slate/60 uppercase tracking-wider">
-            <span>Puzzle #{state.solvedCount + 1}</span>
-            <span>•</span>
-            <span className="text-gold-dark">Resueltos: {state.solvedCount}</span>
-          </div>
+          <div className="w-24 h-5 bg-parchment-dark/15 animate-pulse rounded" />
         )}
       </div>
 
@@ -147,210 +147,228 @@ export default function GamePage() {
         
         {/* Left column: Target & Prediction/Status Controls */}
         <div className="flex flex-col items-center gap-5 md:gap-7 lg:gap-9 w-full max-w-[180px] sm:max-w-[200px] md:max-w-[240px] lg:max-w-[280px]">
-          <ObjectiveCard
-            board={state.targetBoard}
-            phase={state.phase}
-            rotations={state.rotations}
-            mirrorH={state.mirrorH}
-            mirrorV={state.mirrorV}
-            onRotate={() => dispatch({ type: 'ROTATE_TARGET' })}
-            onToggleMirrorH={() => dispatch({ type: 'TOGGLE_MIRROR_HORIZONTAL' })}
-            onToggleMirrorV={() => dispatch({ type: 'TOGGLE_MIRROR_VERTICAL' })}
-          />
+          {isMounted ? (
+            <ObjectiveCard
+              board={state.targetBoard}
+              phase={state.phase}
+              rotations={state.rotations}
+              mirrorH={state.mirrorH}
+              mirrorV={state.mirrorV}
+              onRotate={() => dispatch({ type: 'ROTATE_TARGET' })}
+              onToggleMirrorH={() => dispatch({ type: 'TOGGLE_MIRROR_HORIZONTAL' })}
+              onToggleMirrorV={() => dispatch({ type: 'TOGGLE_MIRROR_VERTICAL' })}
+            />
+          ) : (
+            <div className="w-full aspect-square bg-parchment-dark/10 animate-pulse rounded-lg flex flex-col items-center justify-center border border-parchment-dark/30">
+              <span className="text-[10px] font-sans font-semibold text-accent-slate/40 uppercase tracking-widest">Objetivo</span>
+            </div>
+          )}
 
           {/* Render Mode specific Bidding/Challenge panels or standard Solo panels */}
-          {isMultiplayer ? (
-            /* MULTIPLAYER CONTROLS */
-            <div className="w-full flex flex-col items-center text-center mt-1 md:mt-2.5">
-              {state.phase === 'BIDDING' && (
-                <div className="flex flex-col items-center w-full">
-                  <h4 className="text-xs md:text-sm lg:text-base font-bold text-royal mb-0.5 md:mb-1">Apuesta</h4>
-                  <p className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/60 mb-3 md:mb-4">
-                    Jugador {state.biddingPlayer}, define tu predicción.
-                  </p>
-                  
-                  {/* Predict Adjuster */}
-                  <div className="flex items-center gap-3 md:gap-4.5 mb-3.5 md:mb-5">
-                    <button
-                      onClick={() => handleSetBasePrediction(state.prediction - 1)}
-                      disabled={state.prediction <= modifierCost + 1}
-                      className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent disabled:opacity-30 hover:bg-parchment transition-all"
-                    >
-                      -
-                    </button>
-                    <span className="font-sans text-xl md:text-2xl lg:text-3xl font-extrabold text-royal">{state.prediction}</span>
-                    <button
-                      onClick={() => handleSetBasePrediction(state.prediction + 1)}
-                      className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent hover:bg-parchment transition-all"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  {/* Cost Info */}
-                  {modifierCost > 0 && (
-                    <div className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/70 mb-3 md:mb-3.5 font-medium leading-relaxed">
-                      Penalización: {modifierCost} movs. • Mínimo: {modifierCost + 1}
+          {isMounted ? (
+            isMultiplayer ? (
+              /* MULTIPLAYER CONTROLS */
+              <div className="w-full flex flex-col items-center text-center mt-1 md:mt-2.5">
+                {state.phase === 'BIDDING' && (
+                  <div className="flex flex-col items-center w-full">
+                    <h4 className="text-xs md:text-sm lg:text-base font-bold text-royal mb-0.5 md:mb-1">Apuesta</h4>
+                    <p className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/60 mb-3 md:mb-4">
+                      Jugador {state.biddingPlayer}, define tu predicción.
+                    </p>
+                    
+                    {/* Predict Adjuster */}
+                    <div className="flex items-center gap-3 md:gap-4.5 mb-3.5 md:mb-5">
+                      <button
+                        onClick={() => handleSetBasePrediction(state.prediction - 1)}
+                        disabled={state.prediction <= modifierCost + 1}
+                        className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent disabled:opacity-30 hover:bg-parchment transition-all"
+                      >
+                        -
+                      </button>
+                      <span className="font-sans text-xl md:text-2xl lg:text-3xl font-extrabold text-royal">{state.prediction}</span>
+                      <button
+                        onClick={() => handleSetBasePrediction(state.prediction + 1)}
+                        className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent hover:bg-parchment transition-all"
+                      >
+                        +
+                      </button>
                     </div>
-                  )}
-                  
-                  <button
-                    onClick={() => dispatch({ type: 'START_CHALLENGE', prediction: state.prediction })}
-                    className="py-1 px-4 md:py-2 md:px-6 bg-royal text-white font-sans font-semibold text-[10px] md:text-xs lg:text-sm rounded-full hover:bg-royal-dark transition-colors w-full shadow-sm active:scale-98"
-                  >
-                    Fijar Apuesta
-                  </button>
-                </div>
-              )}
 
-              {state.phase === 'CHALLENGING' && (
-                <div className="flex flex-col items-center w-full">
-                  <div className="flex items-center gap-1 text-[10px] md:text-xs lg:text-sm font-bold text-accent-rose mb-1 md:mb-1.5">
-                    <Hourglass className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
-                    <span>Desafío: {timeLeft}s</span>
-                  </div>
-                  <p className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/75 mb-3 md:mb-4 leading-relaxed">
-                    Jugador {3 - state.biddingPlayer}, ¿puedes resolverlo en MENOS de {state.prediction} movimientos?
-                  </p>
-
-                  {/* Challenge Adjuster */}
-                  <div className="flex items-center gap-3 md:gap-4.5 mb-3.5 md:mb-5">
+                    {/* Cost Info */}
+                    {modifierCost > 0 && (
+                      <div className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/70 mb-3 md:mb-3.5 font-medium leading-relaxed">
+                        Penalización: {modifierCost} movs. • Mínimo: {modifierCost + 1}
+                      </div>
+                    )}
+                    
                     <button
-                      onClick={() => setChallengeBid(prev => Math.max(modifierCost + 1, prev - 1))}
-                      disabled={challengeBid <= modifierCost + 1}
-                      className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent disabled:opacity-30 hover:bg-parchment transition-all"
+                      onClick={() => dispatch({ type: 'START_CHALLENGE', prediction: state.prediction })}
+                      className="py-1 px-4 md:py-2 md:px-6 bg-royal text-white font-sans font-semibold text-[10px] md:text-xs lg:text-sm rounded-full hover:bg-royal-dark transition-colors w-full shadow-sm active:scale-98"
                     >
-                      -
-                    </button>
-                    <span className="font-sans text-xl md:text-2xl lg:text-3xl font-extrabold text-royal">{challengeBid}</span>
-                    <button
-                      onClick={() => setChallengeBid(prev => Math.min(state.prediction - 1, prev + 1))}
-                      disabled={challengeBid >= state.prediction - 1}
-                      className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent disabled:opacity-30 hover:bg-parchment transition-all"
-                    >
-                      +
+                      Fijar Apuesta
                     </button>
                   </div>
+                )}
 
-                  {/* Cost Info */}
-                  {modifierCost > 0 && (
-                    <div className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/70 mb-3 md:mb-3.5 font-medium leading-relaxed">
-                      Penalización: {modifierCost} movs. • Mínimo: {modifierCost + 1}
+                {state.phase === 'CHALLENGING' && (
+                  <div className="flex flex-col items-center w-full">
+                    <div className="flex items-center gap-1 text-[10px] md:text-xs lg:text-sm font-bold text-accent-rose mb-1 md:mb-1.5">
+                      <Hourglass className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
+                      <span>Desafío: {timeLeft}s</span>
                     </div>
-                  )}
+                    <p className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/75 mb-3 md:mb-4 leading-relaxed">
+                      Jugador {3 - state.biddingPlayer}, ¿puedes resolverlo en MENOS de {state.prediction} movimientos?
+                    </p>
 
-                  <div className="flex gap-1.5 md:gap-2.5 w-full">
-                    <button
-                      onClick={() => dispatch({ type: 'SUBMIT_CHALLENGE', prediction: challengeBid })}
-                      disabled={challengeBid >= state.prediction || challengeBid < modifierCost + 1}
-                      className="flex-1 py-1.5 md:py-2.5 bg-royal text-white font-sans font-semibold text-[10px] md:text-xs lg:text-sm rounded-full disabled:opacity-40 shadow-sm transition-colors active:scale-98"
-                    >
-                      Desafiar
-                    </button>
-                    <button
-                      onClick={() => dispatch({ type: 'PASS_CHALLENGE' })}
-                      className="flex-1 py-1.5 md:py-2.5 border border-parchment-dark text-royal bg-transparent hover:bg-parchment font-sans font-semibold text-[10px] md:text-xs lg:text-sm rounded-full transition-colors active:scale-98"
-                    >
-                      Pasar
-                    </button>
-                  </div>
-                </div>
-              )}
+                    {/* Challenge Adjuster */}
+                    <div className="flex items-center gap-3 md:gap-4.5 mb-3.5 md:mb-5">
+                      <button
+                        onClick={() => setChallengeBid(prev => Math.max(modifierCost + 1, prev - 1))}
+                        disabled={challengeBid <= modifierCost + 1}
+                        className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent disabled:opacity-30 hover:bg-parchment transition-all"
+                      >
+                        -
+                      </button>
+                      <span className="font-sans text-xl md:text-2xl lg:text-3xl font-extrabold text-royal">{challengeBid}</span>
+                      <button
+                        onClick={() => setChallengeBid(prev => Math.min(state.prediction - 1, prev + 1))}
+                        disabled={challengeBid >= state.prediction - 1}
+                        className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full border border-parchment-dark text-royal bg-transparent disabled:opacity-30 hover:bg-parchment transition-all"
+                      >
+                        +
+                      </button>
+                    </div>
 
-              {state.phase === 'PLAYING' && (
-                /* Multiplayer Play execution panel */
-                <div className="flex flex-col items-center w-full">
-                  <div className="text-[9px] md:text-[11px] lg:text-xs uppercase font-bold text-accent-slate/50 tracking-wider mb-0.5 md:mb-1">
-                    Turno Jugador {state.activePlayer}
+                    {/* Cost Info */}
+                    {modifierCost > 0 && (
+                      <div className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/70 mb-3 md:mb-3.5 font-medium leading-relaxed">
+                        Penalización: {modifierCost} movs. • Mínimo: {modifierCost + 1}
+                      </div>
+                    )}
+
+                    <div className="flex gap-1.5 md:gap-2.5 w-full">
+                      <button
+                        onClick={() => dispatch({ type: 'SUBMIT_CHALLENGE', prediction: challengeBid })}
+                        disabled={challengeBid >= state.prediction || challengeBid < modifierCost + 1}
+                        className="flex-1 py-1.5 md:py-2.5 bg-royal text-white font-sans font-semibold text-[10px] md:text-xs lg:text-sm rounded-full disabled:opacity-40 shadow-sm transition-colors active:scale-98"
+                      >
+                        Desafiar
+                      </button>
+                      <button
+                        onClick={() => dispatch({ type: 'PASS_CHALLENGE' })}
+                        className="flex-1 py-1.5 md:py-2.5 border border-parchment-dark text-royal bg-transparent hover:bg-parchment font-sans font-semibold text-[10px] md:text-xs lg:text-sm rounded-full transition-colors active:scale-98"
+                      >
+                        Pasar
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-base md:text-lg lg:text-xl font-extrabold text-royal leading-none mb-1.5 md:mb-2">
+                )}
+
+                {state.phase === 'PLAYING' && (
+                  /* Multiplayer Play execution panel */
+                  <div className="flex flex-col items-center w-full">
+                    <div className="text-[9px] md:text-[11px] lg:text-xs uppercase font-bold text-accent-slate/50 tracking-wider mb-0.5 md:mb-1">
+                      Turno Jugador {state.activePlayer}
+                    </div>
+                    <div className="text-base md:text-lg lg:text-xl font-extrabold text-royal leading-none mb-1.5 md:mb-2">
+                      Consumidos: <span className="text-gold-dark">{state.movesCount + modifierCost}</span> de {state.prediction}
+                    </div>
+                    <div className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/60 font-medium mb-3.5 md:mb-5">
+                      {state.movesCount} en tablero • {modifierCost} por carta
+                    </div>
+                    
+                    <div className="flex gap-1 md:gap-2.5 w-full">
+                      <button
+                        onClick={handleUndo}
+                        disabled={state.history.length <= 1}
+                        className="flex items-center justify-center gap-1 flex-1 py-1.5 md:py-2.5 border border-parchment-dark text-royal bg-transparent disabled:opacity-30 rounded-lg text-[10px] md:text-xs lg:text-sm font-bold hover:bg-parchment transition-colors active:scale-98"
+                      >
+                        <Undo className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                        <span>Deshacer</span>
+                      </button>
+                      <button
+                        onClick={handleRestart}
+                        className="flex items-center justify-center gap-1 flex-1 py-1.5 md:py-2.5 border border-parchment-dark text-royal bg-transparent rounded-lg text-[10px] md:text-xs lg:text-sm font-bold hover:bg-parchment transition-colors active:scale-98"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                        <span>Reiniciar</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* SOLO CONTROLS */
+              isPredicting ? (
+                <PredictionPanel
+                  prediction={state.prediction}
+                  rotations={state.rotations}
+                  mirrorH={state.mirrorH}
+                  mirrorV={state.mirrorV}
+                  onSetBasePrediction={handleSetBasePrediction}
+                  onStartPlaying={handleStartPlaying}
+                />
+              ) : (
+                <div className="flex flex-col items-center w-full text-center mt-2.5 md:mt-4">
+                  <div className="text-[10px] md:text-xs lg:text-sm uppercase font-bold text-accent-slate/50 tracking-wider mb-1 md:mb-1.5">
+                    Progreso
+                  </div>
+                  <div className="text-lg md:text-xl lg:text-2xl font-extrabold text-royal leading-none mb-1.5 md:mb-2">
                     Consumidos: <span className="text-gold-dark">{state.movesCount + modifierCost}</span> de {state.prediction}
                   </div>
-                  <div className="text-[9px] md:text-[11px] lg:text-xs text-accent-slate/60 font-medium mb-3.5 md:mb-5">
-                    {state.movesCount} en tablero • {modifierCost} por carta
+                  <div className="text-[10px] md:text-xs lg:text-sm text-accent-slate/60 font-medium mb-4 md:mb-5">
+                    {state.movesCount} en tablero • {modifierCost} por modificar carta
                   </div>
                   
-                  <div className="flex gap-1 md:gap-2.5 w-full">
+                  <div className="flex gap-1.5 md:gap-2.5 w-full">
                     <button
                       onClick={handleUndo}
                       disabled={state.history.length <= 1}
-                      className="flex items-center justify-center gap-1 flex-1 py-1.5 md:py-2.5 border border-parchment-dark text-royal bg-transparent disabled:opacity-30 rounded-lg text-[10px] md:text-xs lg:text-sm font-bold hover:bg-parchment transition-colors active:scale-98"
+                      className="flex items-center justify-center gap-1 flex-1 py-1.5 px-2.5 md:py-2.5 md:px-4 border border-parchment-dark text-royal bg-transparent hover:bg-parchment disabled:opacity-30 rounded-lg text-[11px] md:text-xs lg:text-sm font-bold transition-colors active:scale-98"
                     >
-                      <Undo className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                      <Undo className="w-3 h-3 md:w-4 md:h-4" />
                       <span>Deshacer</span>
                     </button>
+                    
                     <button
                       onClick={handleRestart}
-                      className="flex items-center justify-center gap-1 flex-1 py-1.5 md:py-2.5 border border-parchment-dark text-royal bg-transparent rounded-lg text-[10px] md:text-xs lg:text-sm font-bold hover:bg-parchment transition-colors active:scale-98"
+                      className="flex items-center justify-center gap-1 flex-1 py-1.5 px-2.5 md:py-2.5 md:px-4 border border-parchment-dark text-royal bg-transparent hover:bg-parchment rounded-lg text-[11px] md:text-xs lg:text-sm font-bold transition-colors active:scale-98"
                     >
-                      <RotateCcw className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                      <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
                       <span>Reiniciar</span>
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            /* SOLO CONTROLS */
-            isPredicting ? (
-              <PredictionPanel
-                prediction={state.prediction}
-                rotations={state.rotations}
-                mirrorH={state.mirrorH}
-                mirrorV={state.mirrorV}
-                onSetBasePrediction={handleSetBasePrediction}
-                onStartPlaying={handleStartPlaying}
-              />
-            ) : (
-              <div className="flex flex-col items-center w-full text-center mt-2.5 md:mt-4">
-                <div className="text-[10px] md:text-xs lg:text-sm uppercase font-bold text-accent-slate/50 tracking-wider mb-1 md:mb-1.5">
-                  Progreso
-                </div>
-                <div className="text-lg md:text-xl lg:text-2xl font-extrabold text-royal leading-none mb-1.5 md:mb-2">
-                  Consumidos: <span className="text-gold-dark">{state.movesCount + modifierCost}</span> de {state.prediction}
-                </div>
-                <div className="text-[10px] md:text-xs lg:text-sm text-accent-slate/60 font-medium mb-4 md:mb-5">
-                  {state.movesCount} en tablero • {modifierCost} por modificar carta
-                </div>
-                
-                <div className="flex gap-1.5 md:gap-2.5 w-full">
-                  <button
-                    onClick={handleUndo}
-                    disabled={state.history.length <= 1}
-                    className="flex items-center justify-center gap-1 flex-1 py-1.5 px-2.5 md:py-2.5 md:px-4 border border-parchment-dark text-royal bg-transparent hover:bg-parchment disabled:opacity-30 rounded-lg text-[11px] md:text-xs lg:text-sm font-bold transition-colors active:scale-98"
-                  >
-                    <Undo className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Deshacer</span>
-                  </button>
-                  
-                  <button
-                    onClick={handleRestart}
-                    className="flex items-center justify-center gap-1 flex-1 py-1.5 px-2.5 md:py-2.5 md:px-4 border border-parchment-dark text-royal bg-transparent hover:bg-parchment rounded-lg text-[11px] md:text-xs lg:text-sm font-bold transition-colors active:scale-98"
-                  >
-                    <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Reiniciar</span>
-                  </button>
-                </div>
-              </div>
+              )
             )
+          ) : (
+            <div className="w-full h-24 bg-parchment-dark/10 animate-pulse rounded-lg" />
           )}
         </div>
 
         {/* Right column: Interactive Board */}
         <div className="flex flex-col items-center gap-3.5 md:gap-5 lg:gap-7 w-full max-w-[260px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px]">
-          <GameBoard
-            board={state.currentBoard}
-            phase={state.phase}
-            selectedSquare={state.selectedSquare}
-            validMoves={state.validMoves}
-            onSelectSquare={handleSelectSquare}
-            onMovePiece={handleMovePiece}
-          />
+          {isMounted ? (
+            <GameBoard
+              board={state.currentBoard}
+              phase={state.phase}
+              selectedSquare={state.selectedSquare}
+              validMoves={state.validMoves}
+              onSelectSquare={handleSelectSquare}
+              onMovePiece={handleMovePiece}
+            />
+          ) : (
+            <div className="w-full aspect-square bg-parchment-dark/15 animate-pulse rounded-xl border border-parchment-dark/30" />
+          )}
           
           <div className="text-[10px] md:text-xs lg:text-sm text-center text-accent-slate/50 font-medium italic select-none mt-2 md:mt-3">
-            {state.phase === 'BIDDING' || state.phase === 'CHALLENGING'
-              ? 'Analiza las piezas en silencio.'
-              : `Turno de ejecución: piezas blancas.`}
+            {isMounted ? (
+              state.phase === 'BIDDING' || state.phase === 'CHALLENGING'
+                ? 'Analiza las piezas en silencio.'
+                : `Turno de ejecución: piezas blancas.`
+            ) : (
+              'Cargando tablero real...'
+            )}
           </div>
         </div>
 
@@ -358,7 +376,7 @@ export default function GamePage() {
 
       {/* MULTIPLAYER OVERLAY MODALS */}
       <AnimatePresence>
-        {isMultiplayer && (state.phase === 'ROUND_OVER' || state.phase === 'MATCH_OVER') && (
+        {isMounted && isMultiplayer && (state.phase === 'ROUND_OVER' || state.phase === 'MATCH_OVER') && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -444,7 +462,7 @@ export default function GamePage() {
       </AnimatePresence>
 
       {/* SOLO OVERLAY MODALS */}
-      {!isMultiplayer && (
+      {isMounted && !isMultiplayer && (
         <GameOverlay
           phase={state.phase}
           movesCount={state.movesCount}
