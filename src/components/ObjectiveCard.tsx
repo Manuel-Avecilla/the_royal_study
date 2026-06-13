@@ -37,10 +37,10 @@ export default function ObjectiveCard({
   onToggleMirrorH,
   onToggleMirrorV,
 }: ObjectiveCardProps) {
-  const isPredicting = phase === 'PREDICTING';
+  const isPredicting = phase === 'PREDICTING' || phase === 'BIDDING';
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[180px] sm:max-w-[200px]">
+    <div className="flex flex-col items-center w-full max-w-[180px] sm:max-w-[200px] md:max-w-[240px] lg:max-w-[280px]">
       <h3 className="text-[10px] uppercase tracking-widest text-accent-slate/60 mb-2 font-semibold">
         Objetivo
       </h3>

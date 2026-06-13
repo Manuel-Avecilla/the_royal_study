@@ -44,7 +44,7 @@ export default function GameBoard({
   };
 
   return (
-    <div className="w-full max-w-[260px] sm:max-w-[320px] aspect-square rounded-xl overflow-hidden border border-parchment-dark shadow-sm">
+    <div className="w-full max-w-[260px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] aspect-square rounded-xl overflow-hidden border border-parchment-dark shadow-sm">
       <div className="grid grid-cols-3 w-full h-full">
         {board.map((square, index) => {
           const row = Math.floor(index / 3);

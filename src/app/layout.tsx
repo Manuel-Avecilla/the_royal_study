@@ -8,8 +8,11 @@ const fontSans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "The Royal Study | Chess Logic Puzzle",
-  description: "A premium 3x3 chess puzzle game. Calculate, predict, and execute the exact moves to solve the royal study.",
+  title: "The Royal Study",
+  description: "Un sofisticado juego de puzzles de lógica espacial y ajedrez en 3x3. Calcula, predice y ejecuta los movimientos perfectos.",
+  icons: {
+    icon: "/assets/SVG with shadow/w_rook_svg_withShadow.svg",
+  },
 };
 
 export default function RootLayout({

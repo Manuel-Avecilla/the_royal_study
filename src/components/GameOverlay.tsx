@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, AlertTriangle, RotateCcw, ArrowRight } from 'lucide-react';
+import { GamePhase } from '../lib/gameReducer';
+import { useAudio } from '../hooks/useAudio';
 
 interface GameOverlayProps {
-  phase: 'WON' | 'LOST' | 'PLAYING' | 'PREDICTING';
+  phase: GamePhase;
   movesCount: number;
   modifierCost: number;
   prediction: number;
@@ -23,6 +25,17 @@ export default function GameOverlay({
 }: GameOverlayProps) {
   const isVisible = phase === 'WON' || phase === 'LOST';
   const isWon = phase === 'WON';
+
+  const { play: playWin } = useAudio('/assets/win.wav');
+  const { play: playLose } = useAudio('/assets/lose.wav');
+
+  useEffect(() => {
+    if (phase === 'WON') {
+      playWin();
+    } else if (phase === 'LOST') {
+      playLose();
+    }
+  }, [phase, playWin, playLose]);
 
   return (
     <AnimatePresence>
@@ -57,7 +70,7 @@ export default function GameOverlay({
             </div>
 
             {/* Title */}
-            <h2 className="font-serif text-base font-bold text-royal mb-1.5">
+            <h2 className="font-sans text-base md:text-lg lg:text-xl font-bold text-royal mb-1.5">
               {isWon ? '¡Victoria Real!' : 'Límite Superado'}
             </h2>
             

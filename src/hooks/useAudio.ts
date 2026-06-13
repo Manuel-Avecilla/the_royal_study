@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 /**
  * Custom hook to load and play audio in the browser.
@@ -14,7 +14,7 @@ export function useAudio(url: string) {
     }
   }, [url]);
 
-  const play = () => {
+  const play = useCallback(() => {
     if (audioRef.current) {
       // Reset playback time to start, allowing overlap/spam playing
       audioRef.current.currentTime = 0;
@@ -23,7 +23,7 @@ export function useAudio(url: string) {
         console.warn("Audio playback blocked or failed:", err.message);
       });
     }
-  };
+  }, []);
 
   return { play };
 }
